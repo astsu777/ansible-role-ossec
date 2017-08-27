@@ -1,0 +1,68 @@
+---
+- name: (OSSEC) Install Prerequisites
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - build-essential
+    - python-pexpect
+    - git
+
+- name: (OSSEC) Check if OSSEC is already installed
+  stat:
+    path: "{{ ossec_dir }}"
+  register: ossec
+
+- name: (OSSEC) Retrieve latest version of OSSEC from GitHub
+  git:
+    repo: https://github.com/ossec/ossec-hids.git
+    dest: /opt/ossec-hids
+    update: yes
+  register: gitupdate
+
+- name: (OSSEC) Install OSSEC-HIDS in local mode
+  expect:
+    command: "/bin/bash /opt/ossec-hids/install.sh"
+    responses:
+      en/br: "en"
+      Press ENTER: ""
+      What kind of installation do you want: "{{ ossec_install_type }}"
+      Choose where to install the OSSEC HIDS: "{{ ossec_dir }}"
+      Do you want e-mail notification: "{{ ossec_email }}"
+      e-mail address: "{{ ossec_email_address }}"
+      Do you want to use it: "{{ ossec_detected_smtp_use }}"
+      SMTP server ip: "{{ ossec_smtp_server }}"
+      Do you want to run the integrity check daemon: "{{ ossec_integritycheck_daemon }}"
+      Do you want to run the rootkit detection engine: "{{ ossec_rootkit_engine }}"
+      Do you want to enable active response: "{{ ossec_active_response }}"
+      Do you want to enable the firewall-drop response: "{{ ossec_firewalldrop_response }}"
+      Do you want to add more IPs to the white list: "n"
+  become: yes
+  notify: restart ossec
+  when: not ossec.stat.exists
+  register: ossecinstall
+
+- name: (OSSEC) Cleanup local changes in GIT repository
+  raw: "{{ item }}"
+  with_items:
+    - git -C /opt/ossec-hids/ checkout -f
+    - git -C /opt/ossec-hids/ clean -fd
+  register: gitcleanup
+  when: ossecinstall|changed
+
+- name: (OSSEC) Update OSSEC-HIDS
+  expect:
+    command: "/bin/bash /opt/ossec-hids/install.sh"
+    responses:
+      en/br: "en"
+      Press ENTER: ""
+      Do you want to update it: "y"
+      Do you want to update the rules: "y"
+  notify: restart ossec
+  become: yes
+  when: ossec.stat.exists and gitupdate|changed
+
+- name: (OSSEC) Start OSSEC service
+  service:
+    name: ossec
+    state: started

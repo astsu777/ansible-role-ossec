@@ -1,0 +1,3 @@
+---
+# Install OSSEC HIDS
+- include: ossec.yml
