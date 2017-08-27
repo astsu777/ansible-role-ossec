@@ -23,6 +23,7 @@
 - name: (OSSEC) Install OSSEC-HIDS in local mode
   expect:
     command: "/bin/bash /opt/ossec-hids/install.sh"
+    timeout: 300
     responses:
       en/br: "en"
       Press ENTER: ""
