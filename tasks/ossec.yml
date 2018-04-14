@@ -67,3 +67,10 @@
   service:
     name: ossec
     state: started
+
+- name: (OSSEC) Whitelist Ansible Controller IP address
+  lineinfile:
+    path: /var/ossec/etc/ossec.conf
+    insertafter: '</white_list>'
+    state: present
+    line: "    <white_list>{{ ansible_controller_ip }}</white_list>"

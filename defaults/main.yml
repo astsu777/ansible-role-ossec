@@ -12,6 +12,7 @@ ossec_integritycheck_daemon: y
 ossec_rootkit_engine: y
 ossec_active_response: y
 ossec_firewalldrop_response: y
+ansible_controller_ip: 192.168.1.1
 
 # OSSEC installation questions (without email notification)
 #ossec_dir: /var/ossec

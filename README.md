@@ -3,6 +3,8 @@ Ansible Role: OSSEC-HIDS
 
 This role installs and configures OSSEC-HIDS in local mode. Depending on the defined variables, it is possible to choose the protections and also if email notifications are enabled.
 
+**Note**: the Ansible controller IP address will automatically be whitelisted (to avoid being disconnected by mistake). This IP needs to be defined in a variable (see below).
+
 Requirements
 ------------
 
@@ -28,6 +30,7 @@ ossec_integritycheck_daemon: y
 ossec_rootkit_engine: y
 ossec_active_response: y
 ossec_firewalldrop_response: y
+ansible_controller_ip: 192.168.0.1
 ```
 
 
@@ -43,6 +46,7 @@ ossec_integritycheck_daemon: y
 ossec_rootkit_engine: y
 ossec_active_response: y
 ossec_firewalldrop_response: y
+ansible_controller_ip: 192.168.0.1
 ```
 
 These variables should be defined in either group_vars or host_vars.
