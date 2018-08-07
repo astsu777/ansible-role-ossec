@@ -1,12 +1,44 @@
 ---
-- name: (OSSEC) Install Prerequisites
+## Role Variables
+- name: (OSSEC) Determine development tools package name for Debian OS family
+  set_fact:
+    dev_tools: "build-essential"
+    pexpect: "python-pexpect"
+  when: ansible_os_family == "Debian"
+
+- name: (OSSEC) Determine development tools package name for Red Hat OS family
+  set_fact:
+    dev_tools: "@Development Tools"
+    pexpect: "pexpect"
+  when: ansible_os_family == "RedHat"
+
+
+## Actions
+- name: (OSSEC) Install prerequisites for Debian OS family
   package:
     name: "{{ item }}"
     state: latest
   with_items:
-    - build-essential
-    - python-pexpect
+    - "{{ dev_tools }}"
+    - "{{ pexpect }}"
     - git
+  when: ansible_os_family == "Debian"
+
+- name: (OSSEC) Install prerequisites for Red Hat OS family
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "{{ dev_tools }}"
+    - git
+    - python-pip
+  when: ansible_os_family == "RedHat"
+
+- name: (OSSEC) Install Python library pexpect (Red Hat only)
+  pip:
+    name: pexpect
+    state: latest
+  when: ansible_os_family == "RedHat"
 
 - name: (OSSEC) Check if OSSEC is already installed
   stat:
@@ -44,12 +76,14 @@
   register: ossecinstall
 
 - name: (OSSEC) Cleanup local changes in GIT repository
-  raw: "{{ item }}"
+  command: "{{ item }}"
+  args:
+    chdir: /opt/ossec-hids
   with_items:
-    - git -C /opt/ossec-hids/ checkout -f
-    - git -C /opt/ossec-hids/ clean -fd
+    - git checkout -f
+    - git clean -fd
   register: gitcleanup
-  when: ossecinstall|changed
+  when: ossecinstall is changed
 
 - name: (OSSEC) Update OSSEC-HIDS
   expect:
@@ -61,7 +95,7 @@
       Do you want to update the rules: "y"
   notify: restart ossec
   become: yes
-  when: ossec.stat.exists and gitupdate|changed
+  when: ossec.stat.exists and gitupdate is changed
 
 - name: (OSSEC) Start OSSEC service
   service:
